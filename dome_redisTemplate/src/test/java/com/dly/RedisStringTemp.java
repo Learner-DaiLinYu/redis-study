@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import java.util.Map;
+
 @SpringBootTest
 public class RedisStringTemp {
 
@@ -36,4 +38,12 @@ public class RedisStringTemp {
         System.out.println("user="+user1);
     }
 
+    @Test
+    public void testHash(){
+        stringRedisTemplate.opsForHash().put("user:100","name","Jack");
+        stringRedisTemplate.opsForHash().put("user:100","age","12");
+
+        Map<Object, Object> entries = stringRedisTemplate.opsForHash().entries("user:100");
+        System.out.println(entries);
+    }
 }
