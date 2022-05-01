@@ -20,37 +20,13 @@ import java.util.concurrent.TimeUnit;
 
 public class LoginInterceptor implements HandlerInterceptor {
 
-    private StringRedisTemplate stringRedisTemplate;
-
-    public LoginInterceptor(StringRedisTemplate stringRedisTemplate) {
-        this.stringRedisTemplate = stringRedisTemplate;
-    }
-
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        //获取session
-//        HttpSession session = request.getSession();
-        //获取session中的用户
-//        UserDTO userdto = (UserDTO)session.getAttribute("user");
-
-        //从请求头中获取token
-        String token = request.getHeader("authorization");
-        if(StrUtil.isBlank(token)){
+        //判断是否需要拦截
+        if(UserHolder.getUser()==null){
             response.setStatus(401);
             return false;
         }
-        Map<Object, Object> usermap = stringRedisTemplate.opsForHash().entries(RedisConstants.LOGIN_USER_KEY + token);
-        //判断用户是否存在
-        if(usermap.isEmpty()){
-            //不存在拦截
-            return false;
-        }
-        //存在，保存用户信息到ThreadLocal
-        UserDTO userDTO = BeanUtil.fillBeanWithMap(usermap, new UserDTO(), false);
-        UserHolder.saveUser(userDTO);
-        //刷新登入时间
-        stringRedisTemplate.expire(RedisConstants.LOGIN_USER_KEY + token,RedisConstants.LOGIN_USER_TTL, TimeUnit.MINUTES);
-        //放行
         return true;
     }
 

@@ -17,8 +17,10 @@ import org.omg.PortableInterceptor.USER_EXCEPTION;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpRequest;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import java.util.HashMap;
@@ -54,8 +56,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         //4.保存到redis
 //        session.setAttribute("code",code);
 //        session.setAttribute("phone",phone);
-        stringRedisTemplate.opsForValue().set("login:code",code,2, TimeUnit.MINUTES);
-        stringRedisTemplate.opsForValue().set("login:phone",phone,2,TimeUnit.MINUTES);
+        stringRedisTemplate.opsForValue().set("login:code:"+phone,code,2, TimeUnit.MINUTES);
 
         //5.发送验证码
         log.debug("发送短信验证码成功，验证码：{"+code+"}");
@@ -65,16 +66,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     public Result login(LoginFormDTO loginForm, HttpSession session) {
 
         //1.校验手机号
-        if(stringRedisTemplate.opsForValue().get("login:phone")==null || !stringRedisTemplate.opsForValue().get("login:phone").equals(loginForm.getPhone())){
+        if(RegexUtils.isPhoneInvalid(loginForm.getPhone())){
             //2.如果不符合，返回错误信息
-            return Result.fail("手机号错误");
+            return Result.fail("手机号格式错误");
         }
 
         //获取session的验证码
-        String code = stringRedisTemplate.opsForValue().get("login:code");
+        String code = stringRedisTemplate.opsForValue().get("login:code:"+ loginForm.getPhone());
         if( code==null || !code.equals(loginForm.getCode())){
             return Result.fail("验证码错误");
         }
+
         //查看是否有手机号
         String phone = loginForm.getPhone();
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
@@ -100,5 +102,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         //返回tocken
         stringRedisTemplate.expire(RedisConstants.LOGIN_USER_KEY+token,RedisConstants.LOGIN_USER_TTL,TimeUnit.MINUTES);
         return Result.ok(token);
+    }
+
+    @Override
+    public Result logout(String token) {
+
+        System.out.println(RedisConstants.LOGIN_USER_KEY+token);
+
+        stringRedisTemplate.delete(RedisConstants.LOGIN_USER_KEY+token);
+        return Result.ok();
     }
 }
