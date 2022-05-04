@@ -7,15 +7,20 @@ import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Map;
 
 @SpringBootTest
 public class RedisStringTemp {
-
     @Autowired
     StringRedisTemplate stringRedisTemplate;
+    @Autowired
+    RedisTemplate redisTemplate;
 
     @Test
     public void  stringtest1(){
